@@ -21,13 +21,11 @@ fn main() {
     for passport_data in input.trim_end().split("\n\n") {
         let passport_data = passport_data.replace("\n", " ");
 
-        let mut _num_fields = 0;
         let mut num_required_fields = 0;
         for field_data in passport_data.split(" ") {
             let mut fs = field_data.split(":");
             let name = fs.next().unwrap();
             let _value = fs.next().unwrap();
-            _num_fields += 1;
             if required_fields.contains(name) {
                 num_required_fields += 1;
             }
