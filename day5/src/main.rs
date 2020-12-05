@@ -9,13 +9,9 @@ fn partition(range_start: i32, range_end: i32, by: &str) -> i32 {
 
     for direction in by.chars() {
         match direction {
-            'F' | 'L' => {
-                return partition(range_start, range_start + range_len/2, &by[1..]);
-            },
-            'B' | 'R' => {
-                return partition(range_end - range_len/2, range_end, &by[1..]);
-            },
-            other => panic!("Invalid partitioner: {}", other),
+            'F' | 'L' => return partition(range_start, range_start + range_len/2, &by[1..]),
+            'B' | 'R' => return partition(range_end - range_len/2, range_end, &by[1..]),
+             other => panic!("Invalid partitioner: {}", other),
         }
     }
     panic!("Why here?");
@@ -47,14 +43,10 @@ fn main() {
     println!("Stage 1: Max seat ID = {}", max_seat_id);
 
     seats.sort();
-
-    let mut prev = seats[0];
-    for pos in 1..seats.len()-1 {
-        if seats[pos] != prev+1 {
+    for pos in 1..seats.len() {
+        if seats[pos] != seats[pos-1] + 1 {
+            println!("Stage 2: My seat ID = {}", seats[pos-1] + 1);
             break;
         }
-        prev = seats[pos];
     }
-
-    println!("Stage 2: My seat ID = {}", prev+1);
 }
