@@ -1,3 +1,12 @@
+pub fn argv1_or_default(default_value: &str) -> String {
+    let mut args = std::env::args();
+    let _ = args.next();
+    match args.next() {
+        Some(name) => name,
+        _ => default_value.to_owned(),
+    }
+}
+
 pub struct Grid {
     pub cells:  Vec<Vec<char>>,
     pub width: usize,
