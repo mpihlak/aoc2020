@@ -28,25 +28,34 @@ fn count_contained_bags(bag_color: &str, bags: &BagOfBags) -> i32 {
 fn main() {
     let input_data = read_input_data();
 
-    let mut bag_containers = HashMap::new();
+    let mut bag_data = Vec::new();
 
     for line in input_data.split("\n") {
         let mut split_at_contain = line.split(" contain ");
         let container = split_at_contain.next().unwrap().replace(" bags", "");
         let content_data  = split_at_contain.next().unwrap();
-        let content = content_data
+        let mut content = Vec::new();
+
+        for bag in content_data
             .trim_end_matches('.')
             .split(", ")
             .map(|x| x.replace(" bags", ""))
             .map(|x| x.replace(" bag", ""))
-            .collect::<Vec<String>>();
-
-        for bag in content.iter() {
+        {
             let mut it = bag.splitn(2, " ");
-            let _count = it.next().unwrap();
+            let count = it.next().unwrap();
             let color = it.next().unwrap().to_string();
+            let count = if count == "no" { 0 } else { count.parse::<usize>().unwrap() };
+            content.push((count, color));
+        }
 
-            let entry = bag_containers.entry(color).or_insert(Vec::new());
+        bag_data.push((container, content));
+    }
+
+    let mut bag_containers = HashMap::new();
+    for (container, content) in bag_data.iter() {
+        for (_count, color) in content.iter() {
+            let entry = bag_containers.entry(color.clone()).or_insert(Vec::new());
             entry.push(container.clone());
         }
     }
@@ -56,30 +65,13 @@ fn main() {
     println!("Stage 1: Outer bag colors = {:?}", outer_colors.len());
 
     let mut bag_contents = HashMap::new();
-
-    for line in input_data.split("\n") {
-        let mut split_at_contain = line.split(" contain ");
-        let container = split_at_contain.next().unwrap().replace(" bags", "");
-        let content_data  = split_at_contain.next().unwrap();
-        let content = content_data
-            .trim_end_matches('.')
-            .split(", ")
-            .map(|x| x.replace(" bags", ""))
-            .map(|x| x.replace(" bag", ""))
-            .collect::<Vec<String>>();
-
+    for (container, content) in bag_data.iter() {
         let mut contained_bags = Vec::new();
-        for bag in content.iter() {
-            let mut it = bag.splitn(2, " ");
-            let count = it.next().unwrap();
-            let color = it.next().unwrap().to_string();
-            let count = if count == "no" { 0 } else { count.parse::<usize>().unwrap() };
-
-            for _ in 0..count {
+        for (count, color) in content.iter() {
+            for _ in 0..*count {
                 contained_bags.push(color.clone());
             }
         }
-        println!("{} contains {:?}", container, contained_bags);
         bag_contents.insert(container.clone(), contained_bags);
     }
 
