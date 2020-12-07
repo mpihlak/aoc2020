@@ -33,3 +33,10 @@ version = "0.1.0"
 dependencies = [
  "aoclib",
 ]
+
+[[package]]
+name = "day7"
+version = "0.1.0"
+dependencies = [
+ "aoclib",
+]

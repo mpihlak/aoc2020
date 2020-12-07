@@ -1,3 +1,5 @@
+use std::fs;
+
 pub fn argv1_or_default(default_value: &str) -> String {
     let mut args = std::env::args();
     let _ = args.next();
@@ -5,6 +7,11 @@ pub fn argv1_or_default(default_value: &str) -> String {
         Some(name) => name,
         _ => default_value.to_owned(),
     }
+}
+
+pub fn read_input_data() -> String {
+    let filename = argv1_or_default("input.txt");
+    fs::read_to_string(filename).unwrap().trim_end().to_string()
 }
 
 pub struct Grid {
