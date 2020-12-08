@@ -12,10 +12,19 @@ enum ComputeResult {
     Completed(i32),
 }
 
+impl ComputeResult {
+    fn unwrap(&self) -> i32 {
+        match self {
+            ComputeResult::InfiniteLoop(v) => *v,
+            ComputeResult::Completed(v) => *v,
+        }
+    }
+}
+
 fn interpret(program: &Vec<Op>) -> ComputeResult {
     let mut pos = 0;
     let mut acc = 0;
-    let mut visited: Vec<bool> = (0..program.len()).map(|_| false).collect();
+    let mut visited = vec![false; program.len()];
 
     while pos < program.len() {
         if visited[pos] {
@@ -46,9 +55,8 @@ fn main() {
         program.push(Op { op, value });
     }
 
-    if let ComputeResult::InfiniteLoop(acc) = interpret(&program) {
-        println!("Stage 1: accumulator value = {:?}", acc);
-    }
+    let acc = interpret(&program).unwrap();
+    println!("Stage 1: accumulator value = {:?}", acc);
 
     for pos in 0..program.len() {
         let mut p = program.clone();
