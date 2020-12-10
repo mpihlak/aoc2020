@@ -7,10 +7,10 @@ fn count_arrangements(
     device_voltage: i32,
     mut cache: &mut HashMap<i32,i64>
 ) -> i64 {
-    if voltage+3 > device_voltage {
+    if voltage > device_voltage {
         return 0;
     }
-    if voltage+3 == device_voltage {
+    if voltage == device_voltage {
         return 1;
     }
 
@@ -40,7 +40,7 @@ fn main() {
     adapters.sort();
     println!("Input = {:?}", adapters);
 
-    let device_voltage = adapters.last().unwrap() + 3;
+    let device_voltage = *adapters.last().unwrap();
 
     let mut diffs = HashMap::new();
     let mut voltage = 0;
@@ -56,7 +56,6 @@ fn main() {
 
     let entry = diffs.entry(3).or_insert(0);
     *entry += 1;
-    voltage += 3;
     assert_eq!(device_voltage, voltage);
 
     println!("Final voltage = {}", voltage);
