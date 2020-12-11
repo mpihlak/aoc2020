@@ -17,6 +17,37 @@ fn count_neighbors(g: &Grid, row: usize, col: usize) -> i32 {
     neighbors
 }
 
+fn count_visible_neighbors(g: &Grid, row: usize, col: usize) -> i32 {
+    let mut neighbors = 0;
+    let directions = [
+        (-1,  0),   // north
+        (-1,  1),   // ne
+        ( 0,  1),   // east
+        ( 1,  1),   // se
+        ( 1,  0),   // south
+        ( 1, -1),   // sw
+        ( 0, -1),   // west
+        (-1, -1),   // nw
+    ];
+
+    for (v_dir, h_dir) in directions.iter() {
+        let (mut row_pos, mut col_pos) = (row as i32 + v_dir, col as i32 + h_dir);
+        while let Some(c) = g.at(row_pos, col_pos) {
+            if c == '#' {
+                neighbors += 1;
+            }
+            if c != '.' {
+                break;
+            }
+            row_pos += v_dir;
+            col_pos += h_dir;
+        }
+    }
+
+    neighbors
+}
+
+
 fn iterate<F>(g: &Grid, tolerance: i32, count_fn: F) -> (i32, Grid)
     where F: Fn(&Grid, usize, usize) -> i32
 {
@@ -49,10 +80,10 @@ fn iterate<F>(g: &Grid, tolerance: i32, count_fn: F) -> (i32, Grid)
 
 fn main() {
     let input_data = read_input_data();
-    let mut g = Grid::from_str(&input_data);
+    let grid = Grid::from_str(&input_data);
 
     let mut iteration = 0;
-
+    let mut g = grid.clone();
     loop {
         iteration += 1;
         let (changes, new_grid) = iterate(&g, 4, count_neighbors);
@@ -66,4 +97,21 @@ fn main() {
 
     let occupied_seats = g.count_elems('#');
     println!("Stage 1: Done after {} iterations. {} seats are occupied.", iteration, occupied_seats);
+
+    let mut iteration = 0;
+    let mut g = grid.clone();
+    loop {
+        iteration += 1;
+        let (changes, new_grid) = iterate(&g, 5, count_visible_neighbors);
+        g = new_grid;
+
+        if changes == 0 {
+            println!("Iteration {}, nothing changed. Done here.", iteration);
+            break;
+        }
+    }
+
+    let occupied_seats = g.count_elems('#');
+    println!("Stage 2: Done after {} iterations. {} seats are occupied.", iteration, occupied_seats);
+    println!("{}", g.to_str());
 }
