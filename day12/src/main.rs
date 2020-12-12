@@ -9,12 +9,13 @@ fn turn(current_heading: i32, degrees: i32) -> i32 {
     }
 }
 
+// Heading in degrees to (x, y)
 fn to_dir(heading: i32) -> (i32, i32) {
     match heading {
-        0 => (-1, 0),
-        90 => (0, 1),
-        180 => (1, 0),
-        270 => (0, -1),
+        0 => (0, -1),
+        90 => (1, 0),
+        180 => (0, 1),
+        270 => (-1, 0),
         other => panic!("Invalid heading: {}", other),
     }
 }
@@ -26,7 +27,6 @@ fn main() {
         .split('\n')
         .map(|x| (x.chars().next().unwrap(), x[1..].parse::<i32>().unwrap()))
         .collect();
-    println!("Directions = {:?}", directions);
 
     let mut heading = 90;
     let mut x_pos = 0;
@@ -34,10 +34,10 @@ fn main() {
 
     for (cmd, val) in directions.iter() {
         match cmd {
-            'N' => x_pos -= val,
-            'S' => x_pos += val,
-            'E' => y_pos += val,
-            'W' => y_pos -= val,
+            'N' => y_pos -= val,
+            'S' => y_pos += val,
+            'E' => x_pos += val,
+            'W' => x_pos -= val,
             'L' => heading = turn(heading, -val),
             'R' => heading = turn(heading, *val),
             'F' => {
@@ -49,7 +49,6 @@ fn main() {
         }
     }
 
-    println!("Ship's position: x={}, y={}", x_pos, y_pos);
     let d = x_pos.abs() + y_pos.abs();
     println!("Stage 1: Ship's Manhattan distance = {}", d);
 }
