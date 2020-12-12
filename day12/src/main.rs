@@ -1,21 +1,16 @@
 use aoclib::*;
 
 fn turn(current_heading: i32, degrees: i32) -> i32 {
-    let heading = (current_heading + degrees) % 360;
-    if heading < 0 {
-        heading + 360
-    } else {
-        heading
-    }
+    (360 + (current_heading + degrees)) % 360
 }
 
 // Heading in degrees to (x, y)
 fn to_dir(heading: i32) -> (i32, i32) {
     match heading {
-        0 => (0, -1),
-        90 => (1, 0),
-        180 => (0, 1),
-        270 => (-1, 0),
+          0 => ( 0, -1),
+         90 => ( 1,  0),
+        180 => ( 0,  1),
+        270 => (-1,  0),
         other => panic!("Invalid heading: {}", other),
     }
 }
