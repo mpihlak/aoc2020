@@ -20,6 +20,17 @@ fn to_dir(heading: i32) -> (i32, i32) {
     }
 }
 
+// Rotate coordinates left or right by degrees (multiple of 90)
+fn rotate(x: i32, y: i32, degrees: i32) -> (i32, i32) {
+    match degrees {
+          0 |  360 => ( x,  y),
+        180 | -180 => (-x, -y),
+         90 | -270 => (-y,  x),
+        270 |  -90 => ( y, -x),
+        other => panic!("Invalid rotation: {}", other),
+    }
+}
+
 fn main() {
     let input_data = read_input_data();
 
@@ -51,4 +62,39 @@ fn main() {
 
     let d = x_pos.abs() + y_pos.abs();
     println!("Stage 1: Ship's Manhattan distance = {}", d);
+
+    let mut ship_x = 0;
+    let mut ship_y = 0;
+    let mut wp_x = 10;
+    let mut wp_y = -1;
+
+    for (cmd, val) in directions.iter() {
+        match cmd {
+            'N' => wp_y -= val,
+            'S' => wp_y += val,
+            'E' => wp_x += val,
+            'W' => wp_x -= val,
+            'L' => {
+                // Rotate wp left N degrees
+                let (x, y) = rotate(wp_x, wp_y, -val);
+                wp_x = x;
+                wp_y = y;
+            },
+            'R' => {
+                // Rotate wp right N degrees
+                let (x, y) = rotate(wp_x, wp_y, *val);
+                wp_x = x;
+                wp_y = y;
+            },
+            'F' => {
+                // Move ship towards waypoint N times
+                ship_x += val * wp_x;
+                ship_y += val * wp_y;
+            },
+            other => panic!("Invalid direction command: {}", other),
+        }
+    }
+
+    let d = ship_x.abs() + ship_y.abs();
+    println!("Stage 2: Ship's Manhattan distance = {}", d);
 }
