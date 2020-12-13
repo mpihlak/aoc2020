@@ -35,26 +35,27 @@ fn main() {
     let answer = (earliest_bus_time - earliest_departure) * earliest_bus_id;
     println!("Stage 1: answer = {}", answer);
 
-    let bus_list: Vec<Option<u64>> = raw_bus_list
+    // Convert the bus list into Vec<bus_id, offset>
+    let bus_list: Vec<(u64, u64)> = raw_bus_list
         .split(',')
-        .map(|x| if x == "x" { None } else { Some(x.parse().unwrap()) })
+        .enumerate()
+        .filter(|x| x.1 != "x")
+        .map(|x| (x.1.parse().unwrap(), x.0 as u64))
         .collect();
 
-    let mut t = bus_list[0].unwrap();
-    let mut step = t;
-    let mut offset = 1;
+    let mut t = 0;
+    let mut step = bus_list[0].0;
+    let mut pos = 1;
+    while pos < bus_list.len() {
+        t += step;
 
-    while offset < bus_list.len() {
-        if let Some(bus_id) = bus_list[offset] {
-            if (t + offset as u64) % bus_id == 0 {
-                offset += 1;
-                step = lcm(step, bus_id);
-                println!("t = {}, new_step = {}, new_offset = {}", t, step, offset);
-            }
-            t += step;
-        } else {
-            offset += 1;
+        let (bus_id, offset) = bus_list[pos];
+
+        if (t + offset) % bus_id == 0 {
+            step = lcm(step, bus_id);
+            pos += 1;
         }
     }
 
+    println!("Stage 2: answer = {:?}", t);
 }
