@@ -1,4 +1,5 @@
 use aoclib::*;
+use num::integer::lcm;
 
 fn main() {
     let input_data = read_input_data();
@@ -31,7 +32,6 @@ fn main() {
         }
     }
 
-    println!("Earliest possible bus time = {}, Bus Id = {}", earliest_bus_time, earliest_bus_id);
     let answer = (earliest_bus_time - earliest_departure) * earliest_bus_id;
     println!("Stage 1: answer = {}", answer);
 
@@ -39,28 +39,22 @@ fn main() {
         .split(',')
         .map(|x| if x == "x" { None } else { Some(x.parse().unwrap()) })
         .collect();
-    println!("Stage 2 list = {:?}", bus_list);
 
-    // period is at least min bus_id * max bus_id?
-    // t % min_bus_id == 0 && t+n % max_bus_id == 0
-    // maybe find the first occurrence of this and then get a gcd
-    // then step forward with the gcd as a step and validate?
+    let mut t = bus_list[0].unwrap();
+    let mut step = t;
+    let mut offset = 1;
 
-    // Brute force it
-    let mut t = 0;
-    loop {
-        let mut have_match = true;
-        for (pos, maybe_bus_id) in bus_list.iter().enumerate() {
-            if let Some(bus_id) = maybe_bus_id {
-                if (t + pos as u64) % bus_id != 0 {
-                    have_match = false;
-                    break;
-                }
+    while offset < bus_list.len() {
+        if let Some(bus_id) = bus_list[offset] {
+            if (t + offset as u64) % bus_id == 0 {
+                offset += 1;
+                step = lcm(step, bus_id);
+                println!("t = {}, new_step = {}, new_offset = {}", t, step, offset);
             }
+            t += step;
+        } else {
+            offset += 1;
         }
-        if have_match {
-            println!("Found it at position {}", t);
-        }
-        t += 1;
     }
+
 }
