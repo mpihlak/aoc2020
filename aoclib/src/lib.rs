@@ -14,6 +14,7 @@ pub fn read_input_data() -> String {
     fs::read_to_string(filename).unwrap().trim_end().to_string()
 }
 
+#[derive(Clone)]
 pub struct Grid {
     pub cells:  Vec<Vec<char>>,
     pub width: usize,
@@ -51,6 +52,26 @@ impl Grid {
         res
     }
 
+    pub fn at(&self, row: i32, col: i32) -> Option<char> {
+        if row < 0 || row >= self.height as i32 || col < 0 || col >= self.width as i32 {
+            None
+        } else {
+            Some(self.cells[row as usize][col as usize])
+        }
+    }
+
+    pub fn count_elems(&self, c: char) -> u32 {
+        let mut count = 0;
+
+        for row in self.cells.iter() {
+            for col in row.iter() {
+                if *col == c {
+                    count += 1;
+                }
+            }
+        }
+        count
+    }
 }
 
 #[cfg(test)]
