@@ -8,8 +8,7 @@ fn main() {
     let mut and_mask = !0u64;
     let mut or_mask  =  0u64;
     for line in input_data.split('\n') {
-        if line.starts_with("mask = ") {
-            let mask = &line[7..];
+        if let Some(mask) = line.strip_prefix("mask = ") {
             and_mask = u64::from_str_radix(&mask.replace("X", "1"), 2).unwrap();
             or_mask  = u64::from_str_radix(&mask.replace("X", "0"), 2).unwrap();
         } else {
@@ -18,7 +17,7 @@ fn main() {
             let val_str = &split_line.next().unwrap();
             let val: u64 = val_str.parse::<u64>().unwrap() & and_mask | or_mask;
 
-            mem.insert(mem_str.clone(), val);
+            mem.insert(mem_str.to_string(), val);
         }
     }
 
@@ -31,8 +30,7 @@ fn main() {
     let mut floating_bits = vec![0u32; 0];
 
     for line in input_data.split('\n') {
-        if line.starts_with("mask = ") {
-            let mask_str = &line[7..];
+        if let Some(mask_str) = line.strip_prefix("mask = ") {
             and_mask = u64::from_str_radix(&mask_str.replace("0", "1").replace("X", "0"), 2).unwrap();
             or_mask  = u64::from_str_radix(&mask_str.replace("X", "0"), 2).unwrap();
             floating_bits = mask_str.chars()
@@ -56,7 +54,7 @@ fn main() {
                 }
 
                 let masked_addr = addr & and_mask | or_mask | floating_bits_mask;
-                mem.insert(masked_addr.clone(), val);
+                mem.insert(masked_addr, val);
             }
         }
     }
