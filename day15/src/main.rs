@@ -35,4 +35,7 @@ fn main() {
 
     let answer = count_to(&starting_numbers, 2020);
     println!("Stage 1: answer = {}", answer);
+
+    let answer = count_to(&starting_numbers, 30000000);
+    println!("Stage 2: answer = {}", answer);
 }
