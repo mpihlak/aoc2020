@@ -34,38 +34,29 @@ impl ValidationRule {
             ranges,
         }
     }
+
+    fn is_valid_field(&self, field: i32) -> bool {
+        self.ranges.iter().any(|(start, end)| field >= *start && field <= *end)
+    }
 }
 
-fn is_valid_field(rules_list: &Vec<ValidationRule>, field: i32) -> bool {
+fn is_within_rules(rules_list: &[ValidationRule], field: i32) -> bool {
     for rule in rules_list.iter() {
-        for r in rule.ranges.iter() {
-            if field >= r.0 && field <= r.1 {
-                return true;
-            }
+        if rule.is_valid_field(field) {
+            return true;
         }
     }
     false
 }
 
 // Update the possible validators for the field
-//
-// Note: take care not to add back the validators that were previously removed
-//
 fn update_validators_for(
-    rules_list: &Vec<ValidationRule>,
+    rules_list: &[ValidationRule],
     validation_rules: &mut HashMap<String, bool>,
     field: i32)
 {
     for rule in rules_list.iter() {
-        let mut found = false;
-        for (start, end) in &rule.ranges {
-            if field >= *start && field <= *end {
-                found = true;
-                break;
-            }
-        }
-
-        if found {
+        if rule.is_valid_field(field) {
             // If it's already there we leave it as is. If it's not, add as valid.
             let _e = validation_rules.entry(rule.name.clone()).or_insert(true);
         } else {
@@ -80,19 +71,17 @@ fn main() {
     let mut s = input_data.split("\n\n");
     let rules_str = s.next().unwrap();
     let my_ticket_str = s.next().unwrap();
-    let nearby_tickets_str = s.next().unwrap();
+    let tickets_str = s.next().unwrap();
 
     let my_ticket: Vec<i32> = my_ticket_str
         .split('\n')
-        .skip(1)
-        .next()
+        .nth(1)
         .unwrap()
         .split(',')
         .map(|x| x.parse().unwrap())
         .collect();
-    println!("My ticket = {:?}", my_ticket);
 
-    let tickets: Vec<Vec<i32>> = nearby_tickets_str
+    let tickets: Vec<Vec<i32>> = tickets_str
         .split('\n')
         .skip(1)
         .map(|x| x.split(',').map(|x| x.parse().unwrap()).collect())
@@ -108,7 +97,7 @@ fn main() {
 
     for (pos, ticket) in tickets.iter().enumerate() {
         for field in ticket.iter() {
-            if !is_valid_field(&rules_list, *field) {
+            if !is_within_rules(&rules_list, *field) {
                 sum_invalid_values += field;
                 invalid_tickets[pos] = true;
             }
@@ -129,15 +118,16 @@ fn main() {
         }
     }
 
-    println!("Stage 2");
-
-    // Now start reducing the validators so that we choose the entry with
-    // only 1 validator and then remove that validator from all the other
-    // lists. Brute force should be good enough here for now.
+    // Now build the field by reducing the validators so that we choose the entry with only 1
+    // validator and then remove that validator from all the other lists.
+    // Brute force will do just fine here.
 
     let mut field_map = Vec::new();
 
     while field_map.len() < field_validators.len() {
+        let mut mapped_field = None;
+
+        // Find the field that has just 1 validator
         for (pos, validators) in field_validators.iter_mut().enumerate() {
             let v: Vec<String> = validators.iter()
                 .filter(|(_k, v)| **v)
@@ -145,17 +135,18 @@ fn main() {
                 .collect();
 
             if v.len() == 1 {
-                println!("field {} = {:?}", pos, v);
-                let field_name = v[0].clone();
-                field_map.push((field_name, pos));
+                mapped_field = Some((v[0].clone(), pos));
+                break;
             }
         }
 
-        // We actually know that we want to reduce by a single field, but too lazy ...
-        for (field_name, _pos) in field_map.iter() {
+        // If we found a validator, then that must be the only match and
+        // we must remove it from the rest of the fields.
+        if let Some((field_name, pos)) = mapped_field {
             for validator in field_validators.iter_mut() {
-                validator.remove(field_name);
+                validator.remove(&field_name);
             }
+            field_map.push((field_name, pos));
         }
     }
 
