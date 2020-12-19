@@ -37,71 +37,22 @@ impl Rule {
     }
 }
 
-fn match_rule(rules: &HashMap<usize,Rule>, rule_num: usize, text: &str) -> Option<usize> {
-    let rule = rules.get(&rule_num).unwrap();
-
-    for pattern in rule.match_alternatives.iter() {
-        let mut match_text = text;
-        let mut match_count = 0;
-        let mut match_len = 0;
-
-        for m in pattern.iter() {
-            if match_text.is_empty() {
-                break;
-            }
-
-            match m {
-                Matcher::Literal(c) => {
-                    if match_text.chars().next().unwrap() == *c {
-                        match_text = &match_text[1..];
-                        match_count += 1;
-                        match_len += 1;
-                    } else {
-                        break;
-                    }
-                },
-                Matcher::Indirect(rule) => {
-                    if let Some(len) = match_rule(&rules, *rule, &match_text) {
-                        match_text = &match_text[len..];
-                        match_count += 1;
-                        match_len += len;
-                    } else {
-                        break;
-                    }
-                }
-            }
-        }
-
-        if match_count == pattern.len() {
-            return Some(match_len);
-        }
-    }
-
-    None
+fn match_rule(rules: &HashMap<usize, Rule>, rule_num: usize, text: &str) -> bool {
+    match_rule_aux(rules, rule_num, text)
+        .iter()
+        .find(|x| **x == text.len())
+        .is_some()
 }
 
-fn match_rule_debug(
-    rules: &HashMap<usize, Rule>,
-    rule_num: usize,
-    text: &str,
-    level: usize
-) -> Vec<usize> {
+fn match_rule_aux(rules: &HashMap<usize, Rule>, rule_num: usize, text: &str) -> Vec<usize> {
     let rule = rules.get(&rule_num).unwrap();
     let mut result = Vec::new();
-    let _debug = false;
-
-    if _debug {
-        println!("{}START: try match rule {}: {}", " ".repeat(level), rule_num, text);
-    }
 
     for pattern in rule.match_alternatives.iter() {
         let mut matched_texts = vec![(text, 0)];
 
         for m in pattern.iter() {
-            if _debug {
-                println!("{}rule: {:?} match_texts: {:?}", " ".repeat(level), m, matched_texts);
-            }
-            let mut things_to_consider = Vec::new();
+            let mut matches_to_consider = Vec::new();
 
             while let Some((match_text, match_len)) = matched_texts.pop() {
                 if match_text.is_empty() {
@@ -112,10 +63,7 @@ fn match_rule_debug(
                 match m {
                     Matcher::Literal(c) => {
                         if match_text.chars().next().unwrap() == *c {
-                            if _debug {
-                                println!("{}matched literal {}", " ".repeat(level), *c);
-                            }
-                            things_to_consider.push((&match_text[1..], 1));
+                            matches_to_consider.push((&match_text[1..], 1));
                         } else {
                             break;
                         }
@@ -124,34 +72,24 @@ fn match_rule_debug(
                         // Here the rule might contain multiple matching alternative sub-rules.
                         // If this happens, multiple results will be returned and we need to try each
                         // of them.
-                        for len in match_rule_debug(&rules, *rule, &match_text, level+1) {
-                            if _debug {
-                                println!("{}subrule matched {} chars, consider {}",
-                                    " ".repeat(level), len, &match_text[len..]);
-                            }
-                            things_to_consider.push((&match_text[len..], match_len+len));
+                        for len in match_rule_aux(&rules, *rule, &match_text) {
+                            matches_to_consider.push((&match_text[len..], match_len+len));
                         }
                     }
                 }
             }
 
-            if _debug {
-                println!("{}reassigning: {:?}", " ".repeat(level), things_to_consider);
-            }
-            matched_texts = things_to_consider;
+            matched_texts = matches_to_consider;
         }
 
-        for (match_text, match_len) in matched_texts.iter() {
-            if _debug {
-                println!("{}matched rule {}, remaining: {} ({})", " ".repeat(level), rule_num, match_text, match_len);
-            }
+        for (_, match_len) in matched_texts.iter() {
+            // Pushing all matches to result, and have the caller figure out which
+            // are the correct ones. It's annoying to do it here, because of partial
+            // matches by literals.
             result.push(*match_len);
         }
     }
 
-    if _debug {
-        println!("{}patterns exhausted: returning {:?}", " ".repeat(level), result);
-    }
     result
 }
 
@@ -167,16 +105,16 @@ fn test_rules() {
         .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
         .collect();
 
-    assert_eq!(Some(1), match_rule(&rules, 1, "a"));
-    assert_eq!(None, match_rule(&rules, 1, "b"));
-    assert_eq!(Some(2), match_rule(&rules, 2, "ab"));
-    assert_eq!(Some(2), match_rule(&rules, 2, "ba"));
-    assert_eq!(None, match_rule(&rules, 2, "aa"));
-    assert_eq!(None, match_rule(&rules, 2, "bb"));
-    assert_eq!(Some(3), match_rule(&rules, 0, "aab"));
-    assert_eq!(Some(3), match_rule(&rules, 0, "aba"));
-    assert_eq!(None, match_rule(&rules, 0, "aaa"));
-    assert_eq!(None, match_rule(&rules, 0, "abb"));
+    assert_eq!(true, match_rule(&rules, 1, "a"));
+    assert_eq!(false, match_rule(&rules, 1, "b"));
+    assert_eq!(true, match_rule(&rules, 2, "ab"));
+    assert_eq!(true, match_rule(&rules, 2, "ba"));
+    assert_eq!(false, match_rule(&rules, 2, "aa"));
+    assert_eq!(false, match_rule(&rules, 2, "bb"));
+    assert_eq!(true, match_rule(&rules, 0, "aab"));
+    assert_eq!(true, match_rule(&rules, 0, "aba"));
+    assert_eq!(false, match_rule(&rules, 0, "aaa"));
+    assert_eq!(false, match_rule(&rules, 0, "abb"));
 }
 
 #[allow(dead_code)]
@@ -193,8 +131,8 @@ fn test_rules2() {
         .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
         .collect();
 
-    assert_eq!(Some(6), match_rule(&rules, 0, "ababbb"));
-    assert_eq!(None, match_rule(&rules, 0, "bababa"));
+    assert_eq!(true, match_rule(&rules, 0, "ababbb"));
+    assert_eq!(false, match_rule(&rules, 0, "bababa"));
 }
 
 #[allow(dead_code)]
@@ -209,10 +147,8 @@ fn test_rules3() {
         .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
         .collect();
 
-    assert_eq!(vec![0 as usize; 0], match_rule_debug(&rules, 0, "bb", 0));
-    println!();
-    assert_eq!(vec![2_usize], match_rule_debug(&rules, 0, "ba", 0));
-    println!();
+    assert_eq!(false, match_rule(&rules, 0, "bb"));
+    assert_eq!(true, match_rule(&rules, 0, "ba"));
 }
 
 fn main() {
@@ -233,29 +169,18 @@ fn main() {
     test_rules2();
     test_rules3();
 
-    let mut count_matches = 0;
-    for msg in messages.iter() {
-        if let Some(len) = match_rule(&rules, 0, msg) {
-            if len == msg.len() {
-                count_matches += 1;
-            }
-        }
-    }
-
+    let count_matches = messages.iter()
+        .map(|msg| match_rule(&rules, 0, msg))
+        .filter(|matches| *matches)
+        .count();
     println!("Stage 1: answer = {}", count_matches);
 
     rules.insert( 8, Rule::from_str("8: 42 | 42 8"));
     rules.insert(11, Rule::from_str("11: 42 31 | 42 11 31"));
 
-    let mut count_matches = 0;
-    for msg in messages.iter() {
-        for len in match_rule_debug(&rules, 0, msg, 0) {
-            if len == msg.len() {
-                count_matches += 1;
-                break;
-            }
-        }
-    }
-
+    let count_matches = messages.iter()
+        .map(|msg| match_rule(&rules, 0, msg))
+        .filter(|matches| *matches)
+        .count();
     println!("Stage 2: answer = {}", count_matches);
 }
