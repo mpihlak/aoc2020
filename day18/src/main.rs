@@ -29,7 +29,6 @@ fn number_or_expression<F>(expr: &str, eval: F) -> (i64, &str)
         let remainder = expr.strip_prefix(digits).unwrap();
         (digits.parse().unwrap(), remainder.trim_start())
     }
-
 }
 
 fn operator(expr: &str) -> (&str, &str) {
