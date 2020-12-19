@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use aoclib::*;
 
 #[derive(Debug)]
@@ -36,8 +37,10 @@ impl Rule {
     }
 }
 
-fn match_rule(rules: &Vec<Rule>, rule_num: usize, text: &str) -> Option<usize> {
-    for pattern in rules[rule_num].match_alternatives.iter() {
+fn match_rule(rules: &HashMap<usize,Rule>, rule_num: usize, text: &str) -> Option<usize> {
+    let rule = rules.get(&rule_num).unwrap();
+
+    for pattern in rule.match_alternatives.iter() {
         let mut match_text = text;
         let mut match_count = 0;
         let mut match_len = 0;
@@ -80,8 +83,8 @@ fn test_rules() {
 2: 1 3 | 3 1
 3: \"b\"";
 
-    let rules: Vec<Rule> = rules_str.split('\n')
-        .map(|s| Rule::from_str(s))
+    let rules: HashMap<usize, Rule> = rules_str.split('\n')
+        .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
         .collect();
 
     assert_eq!(Some(1), match_rule(&rules, 1, "a"));
@@ -106,8 +109,8 @@ fn test_rules2() {
 4: \"a\"
 5: \"b\"";
 
-    let rules: Vec<Rule> = rules_str.split('\n')
-        .map(|s| Rule::from_str(s))
+    let rules: HashMap<usize,Rule> = rules_str.split('\n')
+        .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
         .collect();
 
     assert_eq!(Some(6), match_rule(&rules, 0, "ababbb"));
@@ -123,10 +126,9 @@ fn main() {
     let rules_str = split.next().unwrap();
     let messages_str = split.next().unwrap();
 
-    let mut rules: Vec<Rule> = rules_str.split('\n')
-        .map(|s| Rule::from_str(s))
+    let rules: HashMap<usize, Rule> = rules_str.split('\n')
+        .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
         .collect();
-    rules.sort_by(|a,b| a.rule_number.cmp(&b.rule_number));
 
     let messages: Vec<String> = messages_str.split('\n')
         .map(|s| s.to_string())
