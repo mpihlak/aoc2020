@@ -44,7 +44,12 @@ fn match_rule(rules: &HashMap<usize,Rule>, rule_num: usize, text: &str) -> Optio
         let mut match_text = text;
         let mut match_count = 0;
         let mut match_len = 0;
+
         for m in pattern.iter() {
+            if match_text.is_empty() {
+                break;
+            }
+
             match m {
                 Matcher::Literal(c) => {
                     if match_text.chars().next().unwrap() == *c {
@@ -73,6 +78,81 @@ fn match_rule(rules: &HashMap<usize,Rule>, rule_num: usize, text: &str) -> Optio
     }
 
     None
+}
+
+fn match_rule_debug(
+    rules: &HashMap<usize, Rule>,
+    rule_num: usize,
+    text: &str,
+    level: usize
+) -> Vec<usize> {
+    let rule = rules.get(&rule_num).unwrap();
+    let mut result = Vec::new();
+    let _debug = false;
+
+    if _debug {
+        println!("{}START: try match rule {}: {}", " ".repeat(level), rule_num, text);
+    }
+
+    for pattern in rule.match_alternatives.iter() {
+        let mut matched_texts = vec![(text, 0)];
+
+        for m in pattern.iter() {
+            if _debug {
+                println!("{}rule: {:?} match_texts: {:?}", " ".repeat(level), m, matched_texts);
+            }
+            let mut things_to_consider = Vec::new();
+
+            while let Some((match_text, match_len)) = matched_texts.pop() {
+                if match_text.is_empty() {
+                    // Exhausted the text before the pattern. No result.
+                    continue;
+                }
+
+                match m {
+                    Matcher::Literal(c) => {
+                        if match_text.chars().next().unwrap() == *c {
+                            if _debug {
+                                println!("{}matched literal {}", " ".repeat(level), *c);
+                            }
+                            things_to_consider.push((&match_text[1..], 1));
+                        } else {
+                            break;
+                        }
+                    },
+                    Matcher::Indirect(rule) => {
+                        // Here the rule might contain multiple matching alternative sub-rules.
+                        // If this happens, multiple results will be returned and we need to try each
+                        // of them.
+                        for len in match_rule_debug(&rules, *rule, &match_text, level+1) {
+                            if _debug {
+                                println!("{}subrule matched {} chars, consider {}",
+                                    " ".repeat(level), len, &match_text[len..]);
+                            }
+                            things_to_consider.push((&match_text[len..], match_len+len));
+                        }
+                    }
+                }
+            }
+
+            if _debug {
+                println!("{}reassigning: {:?}", " ".repeat(level), things_to_consider);
+            }
+            matched_texts = things_to_consider;
+        }
+
+        for (match_text, match_len) in matched_texts.iter() {
+            if _debug {
+                println!("{}matched rule {}, remaining: {} ({})", " ".repeat(level), rule_num, match_text, match_len);
+            }
+            result.push(*match_len);
+        }
+    }
+
+    if _debug {
+        println!("{}patterns exhausted: returning {:?}", " ".repeat(level), result);
+    }
+    result
 }
 
 #[allow(dead_code)]
@@ -117,22 +197,41 @@ fn test_rules2() {
     assert_eq!(None, match_rule(&rules, 0, "bababa"));
 }
 
-fn main() {
-    test_rules();
-    test_rules2();
+#[allow(dead_code)]
+fn test_rules3() {
+    let rules_str = r#"
+0: 1 | 2 0
+1: "a"
+2: "b"
+"#;
 
+    let rules: HashMap<usize,Rule> = rules_str.trim_start().trim_end().split('\n')
+        .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
+        .collect();
+
+    assert_eq!(vec![0 as usize; 0], match_rule_debug(&rules, 0, "bb", 0));
+    println!();
+    assert_eq!(vec![2_usize], match_rule_debug(&rules, 0, "ba", 0));
+    println!();
+}
+
+fn main() {
     let input_data = read_input_data();
     let mut split = input_data.split("\n\n");
     let rules_str = split.next().unwrap();
     let messages_str = split.next().unwrap();
 
-    let rules: HashMap<usize, Rule> = rules_str.split('\n')
+    let mut rules: HashMap<usize, Rule> = rules_str.split('\n')
         .map(|s| { let r = Rule::from_str(s); ( r.rule_number, r ) } )
         .collect();
 
     let messages: Vec<String> = messages_str.split('\n')
         .map(|s| s.to_string())
         .collect();
+
+    test_rules();
+    test_rules2();
+    test_rules3();
 
     let mut count_matches = 0;
     for msg in messages.iter() {
@@ -144,4 +243,19 @@ fn main() {
     }
 
     println!("Stage 1: answer = {}", count_matches);
+
+    rules.insert( 8, Rule::from_str("8: 42 | 42 8"));
+    rules.insert(11, Rule::from_str("11: 42 31 | 42 11 31"));
+
+    let mut count_matches = 0;
+    for msg in messages.iter() {
+        for len in match_rule_debug(&rules, 0, msg, 0) {
+            if len == msg.len() {
+                count_matches += 1;
+                break;
+            }
+        }
+    }
+
+    println!("Stage 2: answer = {}", count_matches);
 }
