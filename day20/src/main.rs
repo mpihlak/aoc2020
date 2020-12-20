@@ -1,49 +1,5 @@
 use aoclib::*;
 
-/*
- * Notes:
- *
- * We don't need to keep the whole tiles in part1, we just need the edges.
- * Always counting the bits clockwise
- * So total 4x 10bits. Testing for edge match is a straigthforward comparison.
- * Rotation clockwise is a shift right
- * Flips require reversing and swapping the fields.
- *
- * ##.  110 001 110 011
- * #..
- * .##
- *
- * Rotate left
- * .##  011 110 001 110
- * #.#
- * #..
- *
- * Once more
- * ##.  110 011 110 001
- * ..#
- * .##
- *
- * Flip the above L-R (reverse top & bottom, reverse & swap left & right)
- * .##  011 100 011 110
- * #..
- * ##.
- *
- * Flip T-B
- * ##.  110 001 110 011 (reverse & swap top & bottom, reverse left & right)
- * #..
- * .##
- *
- * For every orientation of t
- *    Add to set T
- *    For every orientation of u
- *        Add to set T
- *            For every orientation of v
- *                Add to set T
- *                   ...
- *    If T is a full rectangle then success
- *
- * 
- */
 #[derive(Debug,Clone)]
 struct Tile {
     sides: Vec<String>,
@@ -145,42 +101,17 @@ impl Tile {
 #[derive(Debug)]
 struct Puzzle {
     tiles: Vec<Tile>,
+    side_len: usize,
 }
 
 impl Puzzle {
 
-    fn is_square(solution: &[(i32, i32)]) -> bool {
-        let width: i32 = solution.iter()
-            .map(|(_x,y)| y.abs())
-            .sum();
-        let height: i32 = solution.iter()
-            .map(|(x,_y)| x.abs())
-            .sum();
-        width == height
-    }
-
-    // Check if the tiles can be matched side by side and
-    // in what direction the b side will be.
-    // TODO: Tidy up
-    fn match_tiles(a: &Tile, b: &Tile) -> Vec<(i32, i32)> {
-        let mut result = Vec::new();
-        if a.sides[0] == b.sides[2] {
-            // A top matches B bottom
-            result.push((0, 1));
+    fn new(tiles: Vec<Tile>) -> Self {
+        let side_len = (tiles.len() as f64).sqrt() as usize;
+        Puzzle {
+            tiles,
+            side_len,
         }
-        if a.sides[2] == b.sides[0] {
-            // A bottom matches B top
-            result.push((0, -1));
-        }
-        if a.sides[1] == b.sides[3] {
-            // A right matches B left
-            result.push((1, 0));
-        }
-        if a.sides[3] == b.sides[1] {
-            // A left matches B right
-            result.push((-1, 0))
-        }
-        result
     }
 
     fn left_matches_right(a: &Option<Tile>, b: &Tile) -> bool {
@@ -207,26 +138,21 @@ impl Puzzle {
         &self,
         pos: usize,
         mut used: &mut Vec<bool>,
+        used_count: usize,
         mut solution: &mut Vec<Vec<Option<Tile>>>,
     ) -> Option<u64>
     {
-        let side_len = (self.tiles.len() as f64).sqrt() as usize;
-        let used_count = used.iter().filter(|x| **x).count();
-
         if used_count >= self.tiles.len() {
             let a = solution[0][0].as_ref().unwrap().tile_id;
-            let b = solution[0][side_len-1].as_ref().unwrap().tile_id;
-            let c = solution[side_len-1][side_len-1].as_ref().unwrap().tile_id;
-            let d = solution[side_len-1][0].as_ref().unwrap().tile_id;
+            let b = solution[0][self.side_len-1].as_ref().unwrap().tile_id;
+            let c = solution[self.side_len-1][0].as_ref().unwrap().tile_id;
+            let d = solution[self.side_len-1][self.side_len-1].as_ref().unwrap().tile_id;
             println!("Found a solution: [{}, {}, {}, {}]", a, b, c, d);
             return Some(a*b*c*d);
         }
 
-        let row = pos / side_len;
-        let col = pos % side_len;
-
-        //println!("Trying pos row={}, col={}", row, col);
-        //println!("{} tiles used", used_count);
+        let row = pos / self.side_len;
+        let col = pos % self.side_len;
 
         for tile_pos in 0..self.tiles.len() {
             if used[tile_pos] {
@@ -237,17 +163,13 @@ impl Puzzle {
             let top_tile  = if row > 0 { solution[row-1][col].clone() } else { None };
             let mut tile = self.tiles[tile_pos].clone();
 
-            //println!("left = {:?}", left_tile);
-            //println!("top = {:?}", top_tile);
-
             for flip_how in 0..3 {
                 tile = tile.flip(flip_how);
                 for _rotation in 0..4 {
                     if Puzzle::matches_neighbors(&tile, &left_tile, &top_tile) {
-                        //println!("{}: Placed tile at row={}, col={}: {}", pos, row, col, tile.to_str());
                         used[tile_pos] = true;
                         solution[row][col] = Some(tile.clone());
-                        if let Some(res) = self.place_tile(pos + 1, &mut used, &mut solution) {
+                        if let Some(res) = self.place_tile(pos+1, &mut used, used_count+1, &mut solution) {
                             return Some(res);
                         }
                     }
@@ -263,124 +185,16 @@ impl Puzzle {
     }
 
     fn solve(&self) -> Option<u64> {
-        let side_len = (self.tiles.len() as f64).sqrt() as usize;
         let mut used: Vec<bool> = (0..self.tiles.len()).map(|_| false).collect();
         let mut solution = Vec::new();
-        for _ in 0..side_len {
-            let v: Vec<_> = (0..side_len).map(|_| None).collect();
+        for _ in 0..self.side_len {
+            let v: Vec<_> = (0..self.side_len).map(|_| None).collect();
             solution.push(v);
         }
 
-        self.place_tile(0, &mut used, &mut solution)
+        self.place_tile(0, &mut used, 0, &mut solution)
     }
 
-}
-
-fn test_tile_matches() {
-    assert!(Puzzle::is_square(&vec![
-            (-1,-1), (1, -1),
-            (-1, 1), (1,  1),
-    ]));
-    assert!(!Puzzle::is_square(&vec![
-            (-2,-1), (2, -1),
-            (-2, 1), (2,  1),
-    ]));
-
-    let a = Tile::from_str(
-"Tile 1:
-##.
-..#
-#..");
-
-    assert!(
-        Puzzle::match_tiles(&a,
-            &Tile::from_str(
-"Tile 2:
-...
-...
-..."),
-    ).is_empty());
-
-    assert_eq!(vec![(0, 1)],
-        Puzzle::match_tiles(
-            &a,
-            &Tile::from_str(
-"Tile 2:
-...
-...
-##.")));
-
-    assert_eq!(vec![(1, 0)],
-        Puzzle::match_tiles(
-            &a,
-            &Tile::from_str(
-"Tile 2:
-...
-#..
-...")));
-
-    assert_eq!(vec![(-1, 0)],
-        Puzzle::match_tiles(
-            &a,
-            &Tile::from_str(
-"Tile 2:
-..#
-...
-..#")));
-
-    assert_eq!(vec![(0, -1)],
-        Puzzle::match_tiles(
-            &a,
-            &Tile::from_str(
-"Tile 2:
-#..
-...
-...")));
-
-    assert_eq!(vec![(0, 1),(0,-1)],
-        Puzzle::match_tiles(
-            &a,
-            &Tile::from_str(
-"Tile 2:
-#..
-...
-##.")));
-}
-
-fn test_rotation() {
-    let a = Tile::from_str(
-"Tile 1:
-##.
-#..
-.##");
-
-    let b = a.rotate();
-    assert_eq!(vec![".##", "##.", "#..", ".##"], b.sides);
-    let b = b.rotate();
-    assert_eq!(vec!["##.", ".##", ".##", "#.."], b.sides);
-    let b = b.rotate();
-    assert_eq!(vec!["..#", "##.", "##.", ".##"], b.sides);
-    let b = b.rotate();
-    assert_eq!(a.sides, b.sides);
-}
-
-fn test_flips() {
-    let a = Tile::from_str(
-"Tile 1:
-##..
-#...
-...#
-#.##");
-
-    let b = a.flip(1);
-    assert_eq!(vec!["#.##", "##..", "##..", "#.##"], b.sides);
-    let b = b.flip(1);
-    assert_eq!(a.sides, b.sides);
-
-    let b = a.flip(2);
-    assert_eq!(vec!["..##", "##.#", "##.#", "..##"], b.sides);
-    let b = b.flip(2);
-    assert_eq!(a.sides, b.sides);
 }
 
 fn main() {
@@ -390,11 +204,7 @@ fn main() {
         tiles.push(Tile::from_str(tile_str));
     }
 
-    test_tile_matches();
-    test_rotation();
-    test_flips();
-
-    let puzzle = Puzzle { tiles };
+    let puzzle = Puzzle::new(tiles);
     let answer = puzzle.solve();
     println!("Stage 1: answer = {:?}", answer);
 }
