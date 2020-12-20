@@ -14,7 +14,7 @@ pub fn read_input_data() -> String {
     fs::read_to_string(filename).unwrap().trim_end().to_string()
 }
 
-#[derive(Clone)]
+#[derive(Clone,Debug)]
 pub struct Grid {
     pub cells:  Vec<Vec<char>>,
     pub width: usize,
