@@ -193,19 +193,7 @@ impl Puzzle {
     }
 
     #[allow(dead_code)]
-    fn count_unique_tiles(&self) -> usize {
-        let mut h = std::collections::HashMap::new();
-
-        for tile in self.tiles.iter() {
-            let entry = h.entry(tile.to_str()).or_insert(0);
-            *entry += 1;
-        }
-
-        h.keys().len()
-    }
-
-    #[allow(dead_code)]
-    fn solve_by_bruteforce(&self) -> Option<u64> {
+    fn solve_by_bruteforce(&self, corners: &[u64]) -> Option<u64> {
         let mut used: Vec<bool> = (0..self.tiles.len()).map(|_| false).collect();
         let mut solution = Vec::new();
         for _ in 0..self.side_len {
@@ -213,7 +201,33 @@ impl Puzzle {
             solution.push(v);
         }
 
-        self.place_tile(0, &mut used, 0, &mut solution)
+        for corner in corners.iter() {
+            let mut tile = self.tiles.iter()
+                .find(|x| x.tile_id == *corner)
+                .unwrap()
+                .clone();
+            let tile_pos = self.tiles.iter().enumerate()
+                .find(|(_, x)| x.tile_id == *corner)
+                .map(|(pos, _)| pos)
+                .unwrap();
+
+            used[tile_pos] = true;
+            for how in 0..3 {
+                tile = tile.flip(how);
+                for _ in 0..4 {
+                    println!("Trying corner tile {:?}", tile);
+                    solution[0][0] = Some(tile.clone());
+                    if let Some(answer) = self.place_tile(1, &mut used, 1, &mut solution) {
+                        return Some(answer);
+                    }
+                    tile = tile.rotate();
+                }
+            }
+            used[tile_pos] = false;
+
+            break;
+        }
+        None
     }
 
     fn find_corner_tiles(&self) -> Vec<u64> {
@@ -246,7 +260,6 @@ impl Puzzle {
 
             let count: i32 = count_matching_sides.iter().sum();
             if count == 2 {
-                println!("Tile {}: matching sides = {}", tile.tile_id, count);
                 corners.push(tile.tile_id);
             }
         }
@@ -266,4 +279,7 @@ fn main() {
     let corners = puzzle.find_corner_tiles();
     let answer: u64 = corners.iter().product();
     println!("Stage 1: answer = {:?}", answer);
+
+    let answer = puzzle.solve_by_bruteforce(&corners);
+    println!("Stage 1: bruteforced answer = {:?}", answer);
 }
