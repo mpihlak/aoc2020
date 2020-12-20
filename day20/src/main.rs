@@ -114,6 +114,7 @@ impl Puzzle {
         }
     }
 
+    #[allow(dead_code)]
     fn left_matches_right(a: &Option<Tile>, b: &Tile) -> bool {
         if let Some(left_tile) = a {
             left_tile.sides[1] == b.sides[3]
@@ -122,6 +123,7 @@ impl Puzzle {
         }
     }
 
+    #[allow(dead_code)]
     fn top_matches_bottom(a: &Option<Tile>, b: &Tile) -> bool {
         if let Some(top_tile) = a {
             top_tile.sides[0] == b.sides[2]
@@ -130,10 +132,12 @@ impl Puzzle {
         }
     }
 
+    #[allow(dead_code)]
     fn matches_top_left(a: &Tile, left: &Option<Tile>, top: &Option<Tile>) -> bool {
         Puzzle::left_matches_right(left, a) && Puzzle::top_matches_bottom(top, a)
     }
 
+    #[allow(dead_code)]
     fn place_tile(
         &self,
         pos: usize,
@@ -188,6 +192,7 @@ impl Puzzle {
         None
     }
 
+    #[allow(dead_code)]
     fn count_unique_tiles(&self) -> usize {
         let mut h = std::collections::HashMap::new();
 
@@ -199,7 +204,8 @@ impl Puzzle {
         h.keys().len()
     }
 
-    fn solve(&self) -> Option<u64> {
+    #[allow(dead_code)]
+    fn solve_by_bruteforce(&self) -> Option<u64> {
         let mut used: Vec<bool> = (0..self.tiles.len()).map(|_| false).collect();
         let mut solution = Vec::new();
         for _ in 0..self.side_len {
@@ -208,6 +214,43 @@ impl Puzzle {
         }
 
         self.place_tile(0, &mut used, 0, &mut solution)
+    }
+
+    fn find_corner_tiles(&self) -> Vec<u64> {
+        let mut corners = Vec::new();
+
+        for i in 0..self.tiles.len() {
+            let tile = &self.tiles[i];
+            let mut count_matching_sides = vec![0; 4];
+
+            for j in 0..self.tiles.len() {
+                if i == j {
+                    continue;
+                }
+
+                let mut other = self.tiles[j].clone();
+
+                for how in 0..3 {
+                    other = other.flip(how);
+                    for _rotation in 0..4 {
+                        for k in 0..4 {
+                            if tile.sides[k] == other.sides[k] {
+                                count_matching_sides[k] = 1;
+                            }
+                        }
+
+                        other = other.rotate();
+                    }
+                }
+            }
+
+            let count: i32 = count_matching_sides.iter().sum();
+            if count == 2 {
+                println!("Tile {}: matching sides = {}", tile.tile_id, count);
+                corners.push(tile.tile_id);
+            }
+        }
+        corners
     }
 
 }
@@ -220,7 +263,7 @@ fn main() {
     }
 
     let puzzle = Puzzle::new(tiles);
-    println!("Unique tiles = {}", puzzle.count_unique_tiles());
-    let answer = puzzle.solve();
+    let corners = puzzle.find_corner_tiles();
+    let answer: u64 = corners.iter().product();
     println!("Stage 1: answer = {:?}", answer);
 }
