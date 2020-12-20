@@ -39,7 +39,7 @@ impl Tile {
     fn to_str(&self) -> String {
         let w = self.sides[0].len();
         let h = w;
-        let mut res = format!("Tile {}\n", self.tile_id);
+        let mut res = String::new(); // format!("Tile {}\n", self.tile_id);
 
         res.push_str(&self.sides[0]);
         res.push('\n');
@@ -130,7 +130,7 @@ impl Puzzle {
         }
     }
 
-    fn matches_neighbors(a: &Tile, left: &Option<Tile>, top: &Option<Tile>) -> bool {
+    fn matches_top_left(a: &Tile, left: &Option<Tile>, top: &Option<Tile>) -> bool {
         Puzzle::left_matches_right(left, a) && Puzzle::top_matches_bottom(top, a)
     }
 
@@ -166,10 +166,14 @@ impl Puzzle {
             for flip_how in 0..3 {
                 tile = tile.flip(flip_how);
                 for _rotation in 0..4 {
-                    if Puzzle::matches_neighbors(&tile, &left_tile, &top_tile) {
+                    if Puzzle::matches_top_left(&tile, &left_tile, &top_tile) {
                         used[tile_pos] = true;
                         solution[row][col] = Some(tile.clone());
-                        if let Some(res) = self.place_tile(pos+1, &mut used, used_count+1, &mut solution) {
+                        if let Some(res) = self.place_tile(
+                                pos+1,
+                                &mut used,
+                                used_count+1,
+                                &mut solution) {
                             return Some(res);
                         }
                     }
@@ -182,6 +186,17 @@ impl Puzzle {
         }
 
         None
+    }
+
+    fn count_unique_tiles(&self) -> usize {
+        let mut h = std::collections::HashMap::new();
+
+        for tile in self.tiles.iter() {
+            let entry = h.entry(tile.to_str()).or_insert(0);
+            *entry += 1;
+        }
+
+        h.keys().len()
     }
 
     fn solve(&self) -> Option<u64> {
@@ -205,6 +220,7 @@ fn main() {
     }
 
     let puzzle = Puzzle::new(tiles);
+    println!("Unique tiles = {}", puzzle.count_unique_tiles());
     let answer = puzzle.solve();
     println!("Stage 1: answer = {:?}", answer);
 }
