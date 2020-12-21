@@ -329,9 +329,8 @@ impl Puzzle {
 
 // Find a sea monster
 // Return the count of sea monsters, modify the tile in place
-fn find_sea_monsters(tile: &Tile, sea_monster: &Grid) -> u32 {
+fn find_sea_monsters(tile: &Tile, sea_monster: &Grid) -> Option<u32> {
     let mut monster_count = 0;
-    let mut tile = tile.clone();
 
     for tile_row in 0..tile.grid.height - sea_monster.height {
         for tile_col in 0..tile.grid.width - sea_monster.width {
@@ -355,17 +354,6 @@ fn find_sea_monsters(tile: &Tile, sea_monster: &Grid) -> u32 {
             if there_is_a_monster {
                 // XXX: there might be overlapping monsters. deal with that maybe
                 monster_count += 1;
-
-                for monster_row in 0..sea_monster.height {
-                    for monster_col in 0..sea_monster.width {
-                        let row = tile_row + monster_row;
-                        let col = tile_col + monster_col;
-
-                        if sea_monster.cells[monster_row][monster_col] == '#' {
-                            //tile.grid.cells[row][col] = 'O';
-                        }
-                    }
-                }
             }
         }
     }
@@ -378,13 +366,10 @@ fn find_sea_monsters(tile: &Tile, sea_monster: &Grid) -> u32 {
             .map(|r| r.iter().filter(|c| **c == '#').count() as u32)
             .sum();
         
-        // 1979 is too low
-        // 2414 is too high
-        println!("Found {} monsters.\n{}\n", monster_count, tile.to_str());
-        println!("Roughness = {}", hash_count - monster_hash_count*monster_count);
+        return Some(hash_count - monster_hash_count*monster_count);
     }
 
-    monster_count
+    None
 }
 
 // Find the sea monsters and count the '#' characters that are not
@@ -396,16 +381,15 @@ fn calculate_roughness(image_tile: &Tile) -> u32 {
 .#..#..#..#..#..#...");
 
     println!("The Monster\n{}", sea_monster.to_str());
-    for i in 0..sea_monster.cells.len() {
-        println!("row {}: len={}", i, sea_monster.cells[i].len());
-    }
 
     let mut tile = image_tile.clone();
 
     for how in 0..3 {
         tile = tile.flip(how);
         for _rotation in 0..3 {
-            find_sea_monsters(&tile, &sea_monster);
+            if let Some(result) = find_sea_monsters(&tile, &sea_monster) {
+                return result;
+            }
             tile = tile.rotate();
         }
     }
