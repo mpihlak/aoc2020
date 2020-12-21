@@ -40,7 +40,6 @@ impl Tile {
     #[allow(dead_code)]
     fn to_str(&self) -> String {
         let w = self.grid.cells.len();
-        println!("w={}",w);
         let mut res = String::new(); //format!("Tile {}\n", self.tile_id);
 
         for row in 0..w {
@@ -321,46 +320,95 @@ impl Puzzle {
 
         Tile {
             tile_id: 0,
-            sides: vec![],
+            sides: vec!["".to_string(); 4],
             grid: Grid::from_str(&image_str),
         }
     }
 
 }
 
-#[allow(dead_code)]
-fn test_rotate() {
-    let mut tile = Tile::from_str(
-"Tile 1:
-##.#
-#...
-#.##
-.#..");
-    println!("Original\n{}", tile.to_str());
-    for i in 0..4 {
-        tile = tile.rotate();
-        println!("Rotate {}\n{}", i, tile.to_str());
-    }
-}
+// Find a sea monster
+// Return the count of sea monsters, modify the tile in place
+fn find_sea_monsters(tile: &Tile, sea_monster: &Grid) -> u32 {
+    let mut monster_count = 0;
+    let mut tile = tile.clone();
 
-#[allow(dead_code)]
-fn test_flip() {
-    let mut tile = Tile::from_str(
-"Tile 1:
-##.#
-#...
-#.##
-.#..");
-    println!("Original\n{}", tile.to_str());
-    for i in 0..3 {
-        tile = tile.flip(i);
-        println!("Flip {}\n{}", i, tile.to_str());
+    for tile_row in 0..tile.grid.height - sea_monster.height {
+        for tile_col in 0..tile.grid.width - sea_monster.width {
+            let mut there_is_a_monster = true;
+
+'no_monster:
+            for monster_row in 0..sea_monster.height {
+                for monster_col in 0..sea_monster.width {
+                    let row = tile_row + monster_row;
+                    let col = tile_col + monster_col;
+
+                    let c = sea_monster.cells[monster_row][monster_col];
+                    if c == '#' {
+                        if tile.grid.cells[row][col] != '#' {
+                            there_is_a_monster = false;
+                            break 'no_monster;
+                        }
+                    }
+                }
+            }
+            if there_is_a_monster {
+                // XXX: there might be overlapping monsters. deal with that maybe
+                monster_count += 1;
+
+                for monster_row in 0..sea_monster.height {
+                    for monster_col in 0..sea_monster.width {
+                        let row = tile_row + monster_row;
+                        let col = tile_col + monster_col;
+
+                        if sea_monster.cells[monster_row][monster_col] == '#' {
+                            //tile.grid.cells[row][col] = 'O';
+                        }
+                    }
+                }
+            }
+        }
     }
+
+    if monster_count > 0 {
+        let hash_count: u32 = tile.grid.cells.iter()
+            .map(|r| r.iter().filter(|c| **c == '#').count() as u32)
+            .sum();
+        let monster_hash_count: u32 = sea_monster.cells.iter()
+            .map(|r| r.iter().filter(|c| **c == '#').count() as u32)
+            .sum();
+        
+        // 1979 is too low
+        // 2414 is too high
+        println!("Found {} monsters.\n{}\n", monster_count, tile.to_str());
+        println!("Roughness = {}", hash_count - monster_hash_count*monster_count);
+    }
+
+    monster_count
 }
 
 // Find the sea monsters and count the '#' characters that are not
 // part of the monster.
 fn calculate_roughness(image_tile: &Tile) -> u32 {
+    let sea_monster = Grid::from_str(
+"..................#.
+#    ##    ##    ###
+.#..#..#..#..#..#...");
+
+    println!("The Monster\n{}", sea_monster.to_str());
+    for i in 0..sea_monster.cells.len() {
+        println!("row {}: len={}", i, sea_monster.cells[i].len());
+    }
+
+    let mut tile = image_tile.clone();
+
+    for how in 0..3 {
+        tile = tile.flip(how);
+        for _rotation in 0..3 {
+            find_sea_monsters(&tile, &sea_monster);
+            tile = tile.rotate();
+        }
+    }
     0
 }
 
