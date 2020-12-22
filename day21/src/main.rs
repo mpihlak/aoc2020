@@ -32,6 +32,10 @@ fn solve(foods: &[Food]) -> Option<u32> {
         }
     }
 
+    // Now we should just reduce the allergen map, starting from the entry that
+    // has just one ingredient.
+    // Instead we do this complicated thing ...
+
     for (allergen, ingredients) in allergen_ingredients.iter_mut() {
         ingredients.sort();
         ingredients.dedup();
@@ -43,17 +47,34 @@ fn solve(foods: &[Food]) -> Option<u32> {
 
     solve_aux(&foods, &allergen_ingredients, &mut allergen_map, &mut ingredient_map);
 
-    // I already guessed 86 and that's not the answer
-
-    println!("Allergens = {}", allergen_ingredients.len());
-    println!("Allergy free ingredients:");
+    //println!("Allergy free ingredients:");
     let mut sum = 0;
     for (ingredient, count) in ingredient_counts.iter() {
         if !ingredient_map.contains_key(&ingredient.to_string()) {
-            println!("{}: {}", ingredient, count);
+            //println!("{}: {}", ingredient, count);
             sum += count;
         }
     }
+
+    println!("Allergen count = {}", allergen_ingredients.len());
+    println!("Allergens: {:?}", allergen_map);
+    println!("Ingredients: {:?}", ingredient_map);
+
+    let mut dangerous_ingredients: Vec<(String, String)> = ingredient_map.iter()
+        .map(|x| (x.0.to_string(), x.1.to_string()))
+        .collect();
+    println!("a={:?}", dangerous_ingredients);
+    dangerous_ingredients.sort_by(|a,b| a.1.cmp(&b.1.to_string()));
+    println!("b={:?}", dangerous_ingredients);
+    // NOT the right answer!
+    // rcqb,cltx,nrl,qjvvcvz,zqzmzl,tsqpn,tfqsb,xhnk
+    // rcqb,nrl,qjvvcvz,cltx,tsqpn,tfqsb,xhnk,zqzmzl
+    let canonical_list: Vec<String> = dangerous_ingredients.iter()
+        .map(|x| x.0.clone())
+        .collect();
+
+    let answer = canonical_list.join(",");
+    println!("Canonical list of dangerous ingredients: {}", answer);
 
     Some(sum)
 }
@@ -64,10 +85,8 @@ fn solve_aux(
     mut allergen_map: &mut HashMap<String, String>,
     mut ingredient_map: &mut HashMap<String, String>,
 ) -> bool {
-    if allergen_map.len() == allergen_ingredients.len() {
+    if allergen_map.len() == 8 { // allergen_ingredients.len() {
         // All allergens mapped
-        //println!("Allergen map = {:?}", allergen_map);
-        //println!("Ingredient map = {:?}", ingredient_map);
         return true;
     }
 
