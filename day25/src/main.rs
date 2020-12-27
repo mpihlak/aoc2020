@@ -25,16 +25,6 @@ fn find_loop_size(public_key: u64) -> usize {
 }
 
 fn main() {
-    let door_public_key = 17807724;
-    let card_public_key = 5764801;
-    let door_loop_size = find_loop_size(door_public_key);
-    let card_loop_size = find_loop_size(card_public_key);
-    println!("Door loop size = {}", door_loop_size);
-    println!("Card loop size = {}", card_loop_size);
-    println!("Encryption key = {}", transform_loop(door_public_key, card_loop_size));
-    println!("Encryption key = {}", transform_loop(card_public_key, door_loop_size));
-    println!();
-
     let door_public_key = 2084668;
     let card_public_key = 3704642;
     let door_loop_size = find_loop_size(door_public_key);
