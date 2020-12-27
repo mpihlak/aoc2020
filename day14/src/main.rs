@@ -44,7 +44,7 @@ fn main() {
             let addr: u64 = (&split_line.next().unwrap()[4..].trim_end_matches(']')).parse().unwrap();
             let val:  u64 = (&split_line.next().unwrap()).parse().unwrap();
 
-            for i in 0..2_u32.pow(floating_bits.len() as u32) {
+            for i in 0 .. 1 << floating_bits.len() {
                 let mut floating_bits_mask = 0_u64;
                 for (bit_pos, j) in floating_bits.iter().rev().enumerate() {
                     let b = 1 << bit_pos;
