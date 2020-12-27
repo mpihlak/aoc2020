@@ -41,14 +41,12 @@ impl ConwayCubes3d {
     fn count_active_neighbors(&self, at_x: i32, at_y: i32, at_z: i32) -> i32 {
         let mut res = 0;
 
-        //println!("checking {},{},{}", at_x, at_y, at_z);
         for z in at_z-1 .. at_z+2 {
             for x in at_x-1 .. at_x+2 {
                 for y in at_y-1 .. at_y+2 {
                     if !(x == at_x && y == at_y && z == at_z) {
                         let coords = (x, y, z);
                         let v = *self.cells.get(&coords).unwrap_or(&0);
-                        //println!("v at {},{},{} = {}", x,y,z, v);
                         res += v;
                     }
                 }
@@ -134,7 +132,6 @@ impl ConwayCubes4d {
     fn count_active_neighbors(&self, at_x: i32, at_y: i32, at_z: i32, at_w: i32) -> i32 {
         let mut res = 0;
 
-        //println!("checking {},{},{}", at_x, at_y, at_z);
         for w in at_w-1 .. at_w+2 {
             for z in at_z-1 .. at_z+2 {
                 for x in at_x-1 .. at_x+2 {
@@ -142,7 +139,6 @@ impl ConwayCubes4d {
                         if !(x == at_x && y == at_y && z == at_z && w == at_w) {
                             let coords = (x, y, z, w);
                             let v = *self.cells.get(&coords).unwrap_or(&0);
-                            //println!("v at {},{},{} = {}", x,y,z, v);
                             res += v;
                         }
                     }
