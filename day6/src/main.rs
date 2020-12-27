@@ -1,10 +1,8 @@
-use std::fs;
 use aoclib::*;
 use std::collections::HashMap;
 
 fn main() {
-    let filename = argv1_or_default("input.txt");
-    let answer_data = fs::read_to_string(filename).unwrap();
+    let answer_data = read_input_data();
 
     let mut groups = Vec::new();
     for group_data in answer_data.trim_end().split("\n\n") {
