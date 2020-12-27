@@ -37,10 +37,9 @@ impl Tile {
         }
     }
 
-    #[allow(dead_code)]
     fn to_str(&self) -> String {
         let w = self.grid.cells.len();
-        let mut res = String::new(); //format!("Tile {}\n", self.tile_id);
+        let mut res = String::new();
 
         for row in 0..w {
             let s: String = self.grid.cells[row].iter().collect();
@@ -141,7 +140,6 @@ impl Puzzle {
         }
     }
 
-    #[allow(dead_code)]
     fn left_matches_right(a: &Option<Tile>, b: &Tile) -> bool {
         if let Some(left_tile) = a {
             left_tile.sides[1] == b.sides[3]
@@ -150,7 +148,6 @@ impl Puzzle {
         }
     }
 
-    #[allow(dead_code)]
     fn top_matches_bottom(a: &Option<Tile>, b: &Tile) -> bool {
         if let Some(top_tile) = a {
             top_tile.sides[0] == b.sides[2]
@@ -159,12 +156,10 @@ impl Puzzle {
         }
     }
 
-    #[allow(dead_code)]
     fn matches_top_left(a: &Tile, left: &Option<Tile>, top: &Option<Tile>) -> bool {
         Puzzle::left_matches_right(left, a) && Puzzle::top_matches_bottom(top, a)
     }
 
-    #[allow(dead_code)]
     fn place_tile(
         &self,
         pos: usize,
@@ -220,7 +215,7 @@ impl Puzzle {
         None
     }
 
-    // Knowing the corner pieces try to put together the whole image.
+    // Knowing the corner pieces, try to put together the whole image.
     fn solve(&self, corners: &[u64]) -> Option<Vec<Vec<Option<Tile>>>> {
         let mut used: Vec<bool> = (0..self.tiles.len()).map(|_| false).collect();
         let mut solution = Vec::new();
