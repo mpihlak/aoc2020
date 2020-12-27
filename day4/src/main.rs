@@ -74,7 +74,6 @@ fn main() {
                         }
                     },
                     &"hcl" => {
-                        //println!("field = {}, value = {}", field, val);
                         let mut valid_chars = true;
                         for c in val[1..].chars() {
                             if ! ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) {
@@ -108,10 +107,7 @@ fn main() {
         }
 
         if valid_passport {
-            //println!("  valid: {}", passport_data);
             num_valid_passports += 1;
-        } else {
-            //println!("invalid: {}", passport_data);
         }
     }
 
