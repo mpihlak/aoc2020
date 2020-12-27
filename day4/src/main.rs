@@ -3,12 +3,7 @@ use std::collections::{HashSet, HashMap};
 
 
 fn main() {
-    let mut args = env::args();
-    let _ = args.next();
-    let filename = match args.next() {
-        Some(name) => name,
-        _ => "input.txt".to_string(),
-    };
+    let filename = env::args().nth(1).unwrap_or("input.txt".into());
 
     let required_fields: HashSet<&str> = vec!["byr", "iyr", "eyr", "hgt", "hcl", "ecl", "pid"]
         .iter()
