@@ -18,13 +18,7 @@ fn partition(range_start: i32, range_end: i32, by: &str) -> i32 {
 }
 
 fn main() {
-    let mut args = env::args();
-    let _ = args.next();
-    let filename = match args.next() {
-        Some(name) => name,
-        _ => "input.txt".to_string(),
-    };
-
+    let filename = env::args().nth(1).unwrap_or("input.txt".into());
     let boarding_pass_data = fs::read_to_string(filename).unwrap();
 
     let mut max_seat_id = 0;
