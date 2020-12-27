@@ -32,32 +32,39 @@ impl Tiling {
         neighbors
     }
 
-    fn maybe_flip(&self, row: usize, col: usize, new_grid: &mut Vec<Vec<i32>>) {
+    fn needs_to_flip(&self, row: usize, col: usize) -> bool {
         let n = self.count_neighbors(row, col);
 
         if self.grid[row][col] == 1 {
             if n == 0 || n > 2 {
-                new_grid[row][col] = 0;
+                return true;
             }
         } else {
             if n == 2 {
-                new_grid[row][col] = 1;
+                return true;
             }
         }
+        false
     }
 
     fn next_iteration(&mut self) {
-        let mut new_grid = self.grid.clone();
+        let mut flips = Vec::new();
 
+        // TODO: Really ought to track the bounding box of the tiles
+        // so that we're not doing unnecessary work here.
         let mut offset = 1;
         for row in (2..self.grid.len()-2).step_by(2) {
             for col in (2+offset..self.grid[0].len()-2).step_by(2) {
-                self.maybe_flip(row, col, &mut new_grid);
+                if self.needs_to_flip(row, col) {
+                    flips.push((row, col));
+                }
             }
             offset = (offset + 1) % 2;
         }
 
-        self.grid = new_grid;
+        for (row, col) in flips.iter().copied() {
+            self.grid[row][col] = (self.grid[row][col] + 1) % 2;
+        }
     }
 
     fn count_blacks(&self) -> i32 {
