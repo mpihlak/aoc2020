@@ -19,9 +19,7 @@ fn count_trees(grid: &Grid, right: usize, down: usize) -> u32 {
 }
 
 fn main() {
-    let mut args = env::args();
-    let _ = args.next();
-    let filename = args.next().unwrap_or("input.txt".to_string());
+    let filename = env::args().nth(1).unwrap_or("input.txt".to_string());
     println!("arg = {}", filename);
 
     let grid_data = fs::read_to_string(filename).unwrap();
